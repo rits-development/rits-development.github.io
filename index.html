@@ -1,17 +1,25 @@
 <html>
 <body>
   <input placeholder="Enter some text" name="name"/>
-<p id="values"></p>
+  <p>Change: <p id="changeValues"></p></p>
+  <p>Key down: <p id="keyDownValues"></p></p>
     </body>
   
   <script>
     const input = document.querySelector('input');
-const log = document.getElementById('values');
+    const changeValues = document.getElementById('changeValues');
+    const keyDownValues = document.getElementById('keyDownValues');
 
-input.addEventListener('input', updateValue);
+input.addEventListener('change', changeValue);
+    
+    input.onkeydown = onKeyDown;
 
-function updateValue(e) {
-  log.textContent = e.target.value;
+function onKeyDown(e) {
+  keyDownValues.textContent += ` ${e.code}`;
+}
+
+function changeValue(e) {
+  changeValues.textContent = e.target.value;
 }
   </script>
 </html>
