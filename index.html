@@ -15,11 +15,11 @@ input.addEventListener('change', changeValue);
     input.onkeydown = onKeyDown;
 
 function onKeyDown(e) {
-  keyDownValues.textContent += ` ${e.code}`;
+  keyDownValues.textContent += `| ${e.code}`;
 }
 
 function changeValue(e) {
-  changeValues.textContent = e.target.value;
+  changeValues.textContent += `| e.target.value`;
 }
   </script>
 </html>
