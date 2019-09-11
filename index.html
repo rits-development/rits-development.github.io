@@ -1,5 +1,9 @@
 <html>
 <body>
+  <input placeholder="Enter some text" name="name"/>
+<p id="values"></p>
+    </body>
+  
   <script>
     const input = document.querySelector('input');
 const log = document.getElementById('values');
@@ -10,9 +14,4 @@ function updateValue(e) {
   log.textContent = e.target.value;
 }
   </script>
-
-<input placeholder="Enter some text" name="name"/>
-<p id="values"></p>
-  
-  </body>
 </html>
