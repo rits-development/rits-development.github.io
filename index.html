@@ -1,27 +1,63 @@
 <html>
+<head>
+    <script type="text/javascript">
+    var myWebSocket;
+    function connectToWS() {
+        var endpoint = document.getElementById("endpoint").value;
+        if (myWebSocket !== undefined) {
+            myWebSocket.close()
+        }
+        myWebSocket = new WebSocket(endpoint);
+        myWebSocket.onmessage = function(event) {
+            var leng;
+            if (event.data.size === undefined) {
+                leng = event.data.length
+            } else {
+                leng = event.data.size
+            }
+            console.log("onmessage. size: " + leng + ", content: " + event.data);
+			var paragraph = document.createElement("p"); 
+			paragraph.appendChild(document.createTextNode(event.data));
+			document.getElementById("messages").appendChild(paragraph);
+        }
+        myWebSocket.onopen = function(evt) {
+            console.log("onopen.");
+        };
+        myWebSocket.onclose = function(evt) {
+            console.log("onclose.");
+        };
+        myWebSocket.onerror = function(evt) {
+            console.log("Error!");
+        };
+    }
+	function sendMsg() {
+        var message = document.getElementById("myMessage").value;
+        myWebSocket.send(message);
+    }
+    function closeConn() {
+        myWebSocket.close();
+    }
+    </script>
+</head>
 <body>
-  <input placeholder="Enter some text" name="name"/>
-  <p>Change: <p id="changeValues"></p></p>
-  <p>Key down: <p id="keyDownValues"></p></p>
-    </body>
-  
-  <script>
-    const input = document.querySelector('input');
-    const changeValues = document.getElementById('changeValues');
-    const keyDownValues = document.getElementById('keyDownValues');
 
-input.addEventListener('change', changeValue);
-    
-    input.onkeydown = onKeyDown;
+    <form>
+        connection to: <input type="text" id="endpoint" name="endpoint" value="ws://127.0.0.1:12345"  style="width: 200px" ><br>
+    </form>
 
-function onKeyDown(e) {
-  keyDownValues.textContent += `| ${e.code}`;
-  console.log(e);
-}
+    <input type="button" onclick="connectToWS()" value="connect to WebSocket endpoint" /><br><br>
 
-function changeValue(e) {
-  changeValues.textContent += `| ${e.target.value}`;
-  //console.log(e);
-}
-  </script>
+    <form>
+        message: <input type="text" id="myMessage" name="myMessage" value="hi there!"><br>
+    </form>
+
+    <input type="button" onclick="sendMsg()" value="Send message" />
+
+    <input type="button" onclick="closeConn()" value="Close connection" />
+
+<div id="messages">
+
+</div>
+
+</body>
 </html>
