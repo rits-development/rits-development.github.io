@@ -1,55 +1,57 @@
 <html>
 <head>
-    <script type="text/javascript">
-    var myWebSocket;
+    <script type="application/javascript">
+      var webSocket = null;
 
-
-
-    function connectToWS() {
-        var endpoint = document.getElementById("endpoint").value;
-        if (myWebSocket !== undefined) {
-            myWebSocket.close()
-        }
-        myWebSocket = new WebSocket(endpoint);
-      setTimeout(function(){
-        document.getElementById("status").classList.toggle("ping");
-        myWebSocket.send("ping");
-      }, 1000);
-        myWebSocket.onmessage = function(event) {
-            if (event.data === "pong") {
-              setTimeout(function() {
-                document.getElementById("status").classList.toggle("ping");
-                myWebSocket.send("ping");
-              }, 500);
-            } else {
-              console.log("onmessage. content: " + event.data);
-              var paragraph = document.createElement("p");
-              paragraph.appendChild(document.createTextNode(event.data));
-              document.getElementById("messages").appendChild(paragraph);
-            }
+      let connect = () => {
+        let endpoint = document.getElementById('endpoint').value;
+        webSocket = new WebSocket(endpoint);
+        let onmessageListener = (event) => {
+          if (event.data === 'pong') {
+            document.getElementById('status').classList.toggle('ping');
+            setTimeout((ws) => {
+              if (!!ws && ws.readyState === WebSocket.OPEN) {
+                document.getElementById('status').classList.toggle('ping');
+                ws.send('ping');
+              }
+            }, 500, webSocket);
+          } else {
+            console.log('onmessage. content: ' + event.data);
+            var paragraph = document.createElement('p');
+            paragraph.appendChild(document.createTextNode(event.data));
+            document.getElementById('messages').appendChild(paragraph);
+          }
         };
-        myWebSocket.onopen = function(evt) {
-            console.log("onopen.");
-          document.getElementById("status").classList.remove("disconnected");
-        };
-        myWebSocket.onclose = function(evt) {
-            console.log("onclose.");
-          document.getElementById("status").classList.add("disconnected");
-        };
-        myWebSocket.onerror = function(evt) {
-            console.log("Error!");
-        };
-    }
 
+        let onopenListener = (evt) => {
+          console.log('onopen.');
+          document.getElementById('status').classList.remove('disconnected');
+          const closeButton = document.getElementById('closeConnection');
+          closeButton.removeAttribute('disabled');
+          closeButton.addEventListener('click', () => {
+            webSocket.close();
+          });
+          webSocket.send('ping');
+        };
 
+        let oncloseListener = () => {
+          console.log('onclose.');
+          document.getElementById('status').classList.add('disconnected');
+          const closeButton = document.getElementById('closeConnection');
+          closeButton.setAttribute('disabled', 'disabled');
+          closeButton.removeEventListener('click', () => {
+          });
+          webSocket.removeEventListener('close', oncloseListener);
+          webSocket.removeEventListener('message', onmessageListener);
+          webSocket.removeEventListener('open', onopenListener);
+          webSocket = null;
+          connect();
+        };
 
-	function sendMsg() {
-        var message = document.getElementById("myMessage").value;
-        myWebSocket.send(message);
-    }
-    function closeConn() {
-        myWebSocket.close();
-    }
+        webSocket.onmessage = onmessageListener;
+        webSocket.onopen = onopenListener;
+        webSocket.onclose = oncloseListener;
+      };
     </script>
 
     <style type="text/css">
@@ -62,9 +64,11 @@
             transition-duration: 200ms;
             transition-property: background-color;
         }
+
         #status.ping {
             background-color: white !important;
         }
+
         #status.disconnected {
             background-color: red !important;
         }
@@ -73,20 +77,15 @@
 </head>
 <body>
 
-    <form>
-        connection to: <input type="text" id="endpoint" name="endpoint" value="ws://127.0.0.1:12345"  style="width: 200px" ><br>
-        <div id="status"></div>
-    </form>
+<form>
+    connection to: <input type="text" id="endpoint" name="endpoint" value="ws://127.0.0.1:12345"
+                          style="width: 200px"><br>
+    <div id="status" class="disconnected"></div>
+</form>
 
-    <input type="button" onclick="connectToWS()" value="connect to WebSocket endpoint" /><br><br>
+<input type="button" onclick="connect()" value="connect to WebSocket endpoint"/><br><br>
 
-<!--     <form>
-        message: <input type="text" id="myMessage" name="myMessage" value="hi there!"><br>
-    </form>
-
-    <input type="button" onclick="sendMsg()" value="Send message" /> -->
-
-    <input type="button" onclick="closeConn()" value="Close connection" />
+<input id="closeConnection" type="button" value="Close connection" disabled/>
 
 <div id="messages">
 
