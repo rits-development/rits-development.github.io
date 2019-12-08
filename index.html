@@ -1,20 +1,27 @@
 <html>
 <head>
+    <script src="https://unpkg.com/rxjs@6.5.3/bundles/rxjs.umd.min.js"></script>
+
     <script type="application/javascript">
+      const { range, interval, timer, throwError, of } = rxjs;
+      const { map, tap, retryWhen, delayWhen, takeWhile, delay, mergeMap, retry, concatMap, switchMap, takeUntil, filter, take } = rxjs.operators;
+
       var webSocket = null;
 
       let connect = () => {
+        if (webSocket && webSocket.readyState === WebSocket.OPEN) return;
         let endpoint = document.getElementById('endpoint').value;
         webSocket = new WebSocket(endpoint);
         let onmessageListener = (event) => {
           if (event.data === 'pong') {
             document.getElementById('status').classList.toggle('ping');
+            let webSocketCopy = webSocket;
             setTimeout((ws) => {
               if (!!ws && ws.readyState === WebSocket.OPEN) {
                 document.getElementById('status').classList.toggle('ping');
                 ws.send('ping');
               }
-            }, 500, webSocket);
+            }, 500, webSocketCopy);
           } else {
             console.log('onmessage. content: ' + event.data);
             var paragraph = document.createElement('p');
@@ -28,10 +35,12 @@
           document.getElementById('status').classList.remove('disconnected');
           const closeButton = document.getElementById('closeConnection');
           closeButton.removeAttribute('disabled');
-          closeButton.addEventListener('click', () => {
-            webSocket.close();
-          });
-          webSocket.send('ping');
+          let onCloseHandler = (ws) => {
+            if (!!ws && ws.readyState === WebSocket.OPEN) {
+              ws.close();
+            }
+          };
+          closeButton.addEventListener('click', () => onCloseHandler(webSocket));
         };
 
         let oncloseListener = () => {
@@ -52,6 +61,148 @@
         webSocket.onopen = onopenListener;
         webSocket.onclose = oncloseListener;
       };
+
+      // var previousWebSocket;
+      // var tryReconnecting = () => {
+      //   timer(0, 5000).pipe(
+      //     map(() => {
+      //       let endpoint = document.getElementById('endpoint').value;
+      //       let newWebsocket = new WebSocket(endpoint);
+      //       if (!!previousWebSocket) {
+      //         previousWebSocket.close();
+      //       }
+      //       previousWebSocket = newWebsocket;
+      //       return newWebsocket;
+      //     }),
+      //     switchMap((webSocket) => {
+      //       return interval(500).pipe(filter(() => {
+      //         const ready = webSocket.readyState === WebSocket.OPEN;
+      //         console.log('checking WebSocket ready state = ' + ready);
+      //         return ready;
+      //       }), map(() => webSocket))
+      //     }),
+      //     take(1)
+      //   ).subscribe((webSocket) => {
+      //     attachListeners(webSocket);
+      //     webSocket.send('ping');
+      //   });
+      // };
+
+      // var tryReconnecting = () => {
+      //   interval(5000).pipe(
+      //     map(() => {
+      //       let endpoint = document.getElementById('endpoint').value;
+      //       return new WebSocket(endpoint);
+      //     }),
+      //     delay(1000),
+      //     switchMap((webSocket) => {
+      //       if (webSocket.readyState !== WebSocket.OPEN) {
+      //         return throwError('connecting websocket failed');
+      //       }
+      //       return of(webSocket);
+      //     }),
+      //     //retry(),
+      //     takeUntil((webSocket) => {
+      //       return of(webSocket.readyState === WebSocket.OPEN);
+      //     })
+      //   ).subscribe((webSocket) => {
+      //     attachListeners(webSocket);
+      //   });
+      // };
+
+      // var tryReconnecting = () => {
+      //   interval(10000).pipe(
+      //     map(() => {
+      //       console.log('creating new WebSocket');
+      //       let endpoint = document.getElementById('endpoint').value;
+      //       return new WebSocket(endpoint);
+      //     }),
+      //     concatMap((webSocket) => {
+      //       return of(webSocket).pipe(
+      //         map((webSocket) => {
+      //           console.log('checking WebSocket ready state');
+      //           if (webSocket.readyState !== WebSocket.OPEN) {
+      //             return throwError('connecting websocket failed');
+      //           }
+      //           return of(webSocket);
+      //         }), retryWhen((errors) => {
+      //           errors.pipe(delay(500), tap(() => {
+      //             console.log('checking state');
+      //           }), take(10), concatMap(throwError));
+      //         }));
+      //     })
+      //   ).subscribe((webSocket) => {
+      //     attachListeners(webSocket);
+      //   });
+      // };
+
+      // var tryReconnecting = () => {
+      //   interval(5000).pipe(
+      //     map(() => {
+      //       console.log('creating new WebSocket');
+      //       let endpoint = document.getElementById('endpoint').value;
+      //       return new WebSocket(endpoint);
+      //     }),
+      //     switchMap((webSocket) => {
+      //       return interval(500).pipe(tap(() => {
+      //         }), map(() => {
+      //           return webSocket.readyState === WebSocket.OPEN;
+      //         }), tap((ready) => {
+      //           console.log('ready = ' + ready);
+      //         }), takeWhile(ready => !ready)
+      //       );
+      //     })).subscribe((webSocket) => {
+      //     attachListeners(webSocket);
+      //   });
+      // };
+
+      // let attachListeners = (webSocket) => {
+      //   var timeout;
+      //   webSocket.onmessage = (event) => {  // TODO: make sure event listeners are removed on close/error
+      //     if (event.data === 'pong') {
+      //       document.getElementById('status').classList.toggle('ping');
+      //       timeout = setTimeout(() => { // use rxjs instead
+      //         document.getElementById('status').classList.toggle('ping');
+      //         webSocket.send('ping');
+      //       }, 500);
+      //     } else {
+      //       console.log('onmessage. content: ' + event.data);
+      //       var paragraph = document.createElement('p');
+      //       paragraph.appendChild(document.createTextNode(event.data));
+      //       document.getElementById('messages').appendChild(paragraph);
+      //     }
+      //   };
+      //
+      //   webSocket.onopen = (evt) => {
+      //     console.log('onopen.');
+      //     document.getElementById('status').classList.remove('disconnected');
+      //     const closeButton = document.getElementById('closeConnection');
+      //     closeButton.removeAttribute('disabled');
+      //     closeButton.addEventListener('click', () => {
+      //       webSocket.close();
+      //     });
+      //   };
+      //
+      //   webSocket.onclose = () => {
+      //     console.log('onclose.');
+      //     document.getElementById('status').classList.add('disconnected');
+      //     const closeButton = document.getElementById('closeConnection');
+      //     closeButton.setAttribute('disabled', 'disabled');
+      //     closeButton.removeEventListener('click', () => {
+      //     });
+      //     clearTimeout(timeout);
+      //     webSocket.removeAllListeners();
+      //     tryReconnecting();
+      //   };
+      //
+      //   webSocket.onerror = webSocket.onclose;/*(evt) => {
+      //     console.log('Error!');
+      //     document.getElementById('status').classList.add('disconnected');
+      //     const closeButton = document.getElementById('closeConnection');
+      //     closeButton.setAttribute('disabled', 'disabled');
+      //     closeButton.removeEventListener('click', () => {});
+      //     tryReconnecting();
+      //   };*/
     </script>
 
     <style type="text/css">
